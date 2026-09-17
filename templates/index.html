@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="痠痛分析">
+<meta name="theme-color" content="#2D6A9F">
+<title>痠痛分析</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --blue: #2D6A9F;
+  --blue2: #3d82c4;
+  --green: #27AE60;
+  --red: #E74C3C;
+  --orange: #E67E22;
+  --bg: #F0F4F8;
+  --card: #FFFFFF;
+  --text: #1A1A2E;
+  --text2: #555;
+  --text3: #999;
+  --border: #E0E8F0;
+  --radius: 14px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', sans-serif; min-height: 100vh; padding-bottom: 60px; }
+
+/* Header */
+.header { background: linear-gradient(135deg, var(--blue), var(--blue2)); color: #fff; padding: 18px 20px 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 15px rgba(45,106,159,0.35); }
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 1.15rem; font-weight: 700; }
+.header p { font-size: 0.72rem; opacity: 0.8; margin-top: 3px; }
+.user-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; padding: 5px 12px; color: #fff; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+
+/* Steps */
+.steps { display: flex; padding: 14px 16px 10px; gap: 0; background: #fff; border-bottom: 1px solid var(--border); }
+.step { flex: 1; text-align: center; font-size: 0.62rem; color: var(--text3); position: relative; cursor: pointer; }
+.step.active { color: var(--blue); }
+.step.done { color: var(--green); }
+.step-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--border); color: var(--text3); font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; transition: all 0.2s; }
+.step.active .step-dot { background: var(--blue); color: #fff; }
+.step.done .step-dot { background: var(--green); color: #fff; }
+.step-line { position: absolute; top: 11px; left: 60%; right: -40%; height: 2px; background: var(--border); z-index: -1; }
+.step:last-child .step-line { display: none; }
+.step.done .step-line { background: var(--green); }
+
+/* Card */
+.card { background: var(--card); border-radius: var(--radius); margin: 12px 14px; padding: 15px; box-shadow: var(--shadow); }
+.card-title { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+
+/* View tabs */
+.view-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.view-tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 0.75rem; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; color: var(--text2); background: #FAFAFA; transition: all 0.15s; }
+.view-tab.active { border-color: var(--blue); background: #EEF4FB; color: var(--blue); font-weight: 600; }
+
+/* Body map */
+.body-map-wrap { position: relative; width: 100%; border-radius: 10px; overflow: hidden; background: #f9f9f9; }
+.body-map-wrap img { width: 100%; display: block; max-height: 380px; object-fit: contain; }
+.body-map-wrap svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+.side-selector { display: flex; gap: 8px; margin-bottom: 8px; }
+.side-btn { flex: 1; padding: 7px; text-align: center; font-size: 0.78rem; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; background: #FAFAFA; transition: all 0.15s; }
+.side-btn.active { border-color: var(--blue); background: #EEF4FB; color: var(--blue); font-weight: 600; }
+
+.mark-info { font-size: 0.7rem; color: var(--text3); text-align: center; margin-top: 6px; }
+.marks-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; min-height: 24px; }
+.mark-tag { background: rgba(45,106,159,0.1); border: 1px solid rgba(45,106,159,0.3); border-radius: 12px; padding: 3px 10px; font-size: 0.68rem; color: var(--blue); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.mark-tag:hover { background: rgba(231,76,60,0.1); border-color: var(--red); color: var(--red); }
+.clear-btn { font-size: 0.68rem; color: var(--red); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0; margin-left: auto; }
+
+/* Symptom tags */
+.tag-group { margin-bottom: 12px; }
+.tag-group-label { font-size: 0.75rem; font-weight: 600; color: var(--text2); margin-bottom: 7px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 0.73rem; cursor: pointer; color: var(--text2); background: #FAFAFA; transition: all 0.15s; user-select: none; }
+.tag.selected { background: var(--blue); border-color: var(--blue); color: #fff; }
+.tag.selected.orange { background: var(--orange); border-color: var(--orange); }
+.tag.selected.red { background: var(--red); border-color: var(--red); }
+
+/* Slider */
+.slider-wrap { margin: 4px 0; }
+.slider-labels { display: flex; justify-content: space-between; font-size: 0.63rem; color: var(--text3); margin-top: 3px; }
+input[type=range] { width: 100%; accent-color: var(--blue); height: 4px; }
+.level-val { font-size: 1.1rem; font-weight: 700; color: var(--blue); text-align: center; margin-bottom: 6px; }
+
+/* Textarea */
+textarea { width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; color: var(--text); font-family: inherit; resize: vertical; outline: none; background: #FAFAFA; line-height: 1.6; transition: border-color 0.2s; }
+textarea:focus { border-color: var(--blue); background: #fff; }
+
+/* Result */
+.result-content { font-size: 0.82rem; line-height: 1.75; color: var(--text); }
+.result-content h2 { font-size: 0.9rem; font-weight: 700; color: var(--blue); margin: 14px 0 7px; padding-bottom: 4px; border-bottom: 1.5px solid var(--border); }
+.result-content h2:first-child { margin-top: 0; }
+.result-content strong { color: var(--text); font-weight: 600; }
+.result-content ul, .result-content ol { padding-left: 18px; margin: 5px 0; }
+.result-content li { margin: 3px 0; }
+.result-content p { margin: 5px 0; }
+
+/* Buttons */
+.btn { width: 100%; padding: 13px; background: var(--blue); color: #fff; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: opacity 0.2s; letter-spacing: 0.3px; }
+.btn:disabled { opacity: 0.45; }
+.btn:active { opacity: 0.8; }
+.btn-outline { background: var(--card); color: var(--blue); border: 1.5px solid var(--blue); margin-top: 8px; }
+.btn-green { background: var(--green); margin-top: 8px; }
+.btn-sm { padding: 9px; font-size: 0.8rem; }
+
+/* User modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+.modal { background: var(--card); border-radius: 18px 18px 0 0; padding: 20px; width: 100%; max-width: 500px; }
+.modal-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; }
+.user-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.user-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s; }
+.user-item.active { border-color: var(--blue); background: #EEF4FB; }
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.user-name { font-size: 0.85rem; font-weight: 600; }
+.add-user-row { display: flex; gap: 8px; }
+.input-field { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 0.82rem; outline: none; font-family: inherit; }
+.input-field:focus { border-color: var(--blue); }
+
+/* Loading */
+.loading { text-align: center; padding: 28px; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { font-size: 0.82rem; color: var(--text2); }
+
+/* History */
+.history-item { border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 13px; margin-bottom: 8px; }
+.history-date { font-size: 0.68rem; color: var(--text3); margin-bottom: 4px; }
+.history-marks { font-size: 0.78rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.history-preview { font-size: 0.72rem; color: var(--text2); }
+
+/* Toast */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 9px 20px; border-radius: 22px; font-size: 0.78rem; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🩺 痠痛分析</h1>
+      <p>點選疼痛部位，AI 幫你找出原因與按摩建議</p>
+    </div>
+    <button class="user-btn" onclick="openUserModal()">
+      👤 <span id="current-user-name">選擇使用者</span>
+    </button>
+  </div>
+</div>
+
+<!-- Steps -->
+<div class="steps">
+  <div class="step active" id="step-1" onclick="goToStep(1)">
+    <div class="step-dot">1</div>標記位置
+    <div class="step-line"></div>
+  </div>
+  <div class="step" id="step-2" onclick="goToStep(2)">
+    <div class="step-dot">2</div>描述症狀
+    <div class="step-line"></div>
+  </div>
+  <div class="step" id="step-3" onclick="goToStep(3)">
+    <div class="step-dot">3</div>AI 分析
+    <div class="step-line"></div>
+  </div>
+  <div class="step" id="step-4" onclick="goToStep(4)">
+    <div class="step-dot">4</div>歷史記錄
+  </div>
+</div>
+
+<!-- Section 1: 標記位置 -->
+<div id="section-1">
+  <div class="card">
+    <div class="card-title">📍 點選疼痛部位（可多點）</div>
+
+    <!-- 視角切換 -->
+    <div class="view-tabs">
+      <div class="view-tab active" data-view="front" onclick="switchView('front')">正面</div>
+      <div class="view-tab" data-view="back" onclick="switchView('back')">背面</div>
+      <div class="view-tab" data-view="side" onclick="switchView('side')">側面</div>
+    </div>
+
+    <!-- 側面左右選擇 -->
+    <div class="side-selector hidden" id="side-selector">
+      <div class="side-btn active" data-side="left" onclick="selectSide('left')">左側</div>
+      <div class="side-btn" data-side="right" onclick="selectSide('right')">右側</div>
+    </div>
+
+    <!-- 人體圖 -->
+    <div class="body-map-wrap" id="body-map-wrap">
+      <img id="body-img" src="/static/body_map_adult.jpg" alt="人體圖">
+      <svg id="body-svg" onclick="onBodyClick(event)"></svg>
+    </div>
+    <div class="mark-info">點擊圖片標記疼痛位置・點標記點可刪除</div>
+
+    <!-- 已標記部位 -->
+    <div style="display:flex;align-items:center;margin-top:10px;margin-bottom:4px">
+      <span style="font-size:0.73rem;font-weight:600;color:var(--text2)">已標記部位</span>
+      <button class="clear-btn" onclick="clearAllMarks()">全部清除</button>
+    </div>
+    <div class="marks-list" id="marks-list">
+      <span style="font-size:0.7rem;color:var(--text3)">尚未標記</span>
+    </div>
+  </div>
+
+  <div style="margin:0 14px">
+    <button class="btn" onclick="goToStep(2)" id="btn-to-step2">下一步：描述症狀 →</button>
+  </div>
+</div>
+
+<!-- Section 2: 描述症狀 -->
+<div id="section-2" class="hidden">
+  <div class="card">
+    <div class="card-title">📋 症狀描述</div>
+
+    <!-- 疼痛時機 -->
+    <div class="tag-group">
+      <div class="tag-group-label">⏰ 疼痛時機（可多選）</div>
+      <div class="tags" id="tags-timing">
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">活動時</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">休息時</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">睡醒起床</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">久坐後起身</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">走路時</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">上下樓梯</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">按壓時</div>
+        <div class="tag" data-group="timing" onclick="toggleTag(this)">不特定</div>
+      </div>
+    </div>
+
+    <!-- 疼痛性質 -->
+    <div class="tag-group">
+      <div class="tag-group-label">💢 疼痛性質（可多選）</div>
+      <div class="tags">
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">痠軟無力</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">鈍痛</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">刺痛</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">緊繃感</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">麻感</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">抽筋</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">燒灼感</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">腫脹感</div>
+        <div class="tag" data-group="pain_type" onclick="toggleTag(this)">說不清楚</div>
+      </div>
+    </div>
+
+    <!-- 可能情境 -->
+    <div class="tag-group">
+      <div class="tag-group-label">🪑 可能的原因情境（可多選）</div>
+      <div class="tags">
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">久坐（讀書/工作）</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">久站</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">長時間低頭</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">睡姿不良</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">搬重物</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">跑步/運動後</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">使用3C時間長</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">生長期（小孩）</div>
+        <div class="tag" data-group="situation" onclick="toggleTag(this)">不明原因</div>
+      </div>
+    </div>
+
+    <!-- 發生頻率 -->
+    <div class="tag-group">
+      <div class="tag-group-label">📅 發生頻率</div>
+      <div class="tags">
+        <div class="tag" data-group="frequency" data-single onclick="toggleTag(this)">第一次發生</div>
+        <div class="tag" data-group="frequency" data-single onclick="toggleTag(this)">偶爾</div>
+        <div class="tag" data-group="frequency" data-single onclick="toggleTag(this)">最近常發生</div>
+        <div class="tag" data-group="frequency" data-single onclick="toggleTag(this)">持續好幾天</div>
+        <div class="tag" data-group="frequency" data-single onclick="toggleTag(this)">反覆發作已久</div>
+      </div>
+    </div>
+
+    <!-- 持續時間 -->
+    <div class="tag-group">
+      <div class="tag-group-label">⏱ 這次持續多久</div>
+      <div class="tags">
+        <div class="tag" data-group="duration" data-single onclick="toggleTag(this)">剛開始</div>
+        <div class="tag" data-group="duration" data-single onclick="toggleTag(this)">幾小時內</div>
+        <div class="tag" data-group="duration" data-single onclick="toggleTag(this)">1-3天</div>
+        <div class="tag" data-group="duration" data-single onclick="toggleTag(this)">一週以上</div>
+        <div class="tag" data-group="duration" data-single onclick="toggleTag(this)">一個月以上</div>
+      </div>
+    </div>
+
+    <!-- 痛覺指數 -->
+    <div class="tag-group">
+      <div class="tag-group-label">📊 痛覺強度</div>
+      <div class="level-val" id="level-val">5</div>
+      <div class="slider-wrap">
+        <input type="range" id="pain-level" min="1" max="10" value="5"
+          oninput="document.getElementById('level-val').textContent=this.value">
+        <div class="slider-labels"><span>輕微不適</span><span>中等</span><span>非常痛</span></div>
+      </div>
+    </div>
+
+    <!-- 補充描述 -->
+    <div class="tag-group" style="margin-bottom:0">
+      <div class="tag-group-label">💬 補充說明（選填）</div>
+      <textarea id="description" rows="3"
+        placeholder="例如：小孩睡前說腳很痠、只有晚上才痛、已經痛兩天了..."></textarea>
+    </div>
+  </div>
+
+  <div style="margin:0 14px;display:flex;flex-direction:column;gap:8px">
+    <button class="btn" onclick="startAnalysis()">🔍 開始 AI 分析</button>
+    <button class="btn btn-outline" onclick="goToStep(1)">← 返回修改標記</button>
+  </div>
+</div>
+
+<!-- Section 3: 分析結果 -->
+<div id="section-3" class="hidden">
+  <div class="card" id="result-card">
+    <div class="card-title">🤖 AI 分析結果</div>
+    <div id="result-content"></div>
+  </div>
+  <div style="margin:0 14px;display:flex;flex-direction:column;gap:8px">
+    <button class="btn btn-green" id="save-btn" onclick="saveRecord()">💾 儲存這次記錄</button>
+    <button class="btn btn-outline" onclick="resetAll()">🔄 重新分析</button>
+  </div>
+</div>
+
+<!-- Section 4: 歷史記錄 -->
+<div id="section-4" class="hidden">
+  <div class="card">
+    <div class="card-title">📂 歷史記錄
+      <span style="font-size:0.68rem;color:var(--text3);font-weight:400;margin-left:auto" id="history-user-label"></span>
+    </div>
+    <div id="history-list"><div style="text-align:center;padding:20px;color:var(--text3);font-size:0.8rem">尚無記錄</div></div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="section-loading" class="hidden">
+  <div class="card">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>AI 正在分析中<br>請稍候...</p>
+    </div>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay hidden" id="user-modal" onclick="closeUserModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">👤 選擇使用者</div>
+    <div class="user-list" id="user-list"></div>
+    <div class="add-user-row">
+      <input class="input-field" id="new-user-input" placeholder="新增使用者（如：小明）" maxlength="10">
+      <button class="btn btn-sm" style="width:auto;padding:9px 16px" onclick="addUser()">新增</button>
+    </div>
+    <button class="btn btn-outline btn-sm" style="margin-top:10px" onclick="closeUserModal()">關閉</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 全域狀態 ──
+let marks = [];
+let currentView = 'front';
+let currentSide = 'left';
+let currentUser = null;
+let currentResult = null;
+let pendingSave = false;
+
+// 部位對應表（根據圖片三視角的大概位置）
+const BODY_PARTS = {
+  front: [
+    { name: '頭/頸部', xPct: [0.28, 0.45], yPct: [0, 0.12] },
+    { name: '肩膀', xPct: [0.1, 0.44], yPct: [0.12, 0.22] },
+    { name: '胸部', xPct: [0.15, 0.44], yPct: [0.18, 0.32] },
+    { name: '腹部', xPct: [0.15, 0.44], yPct: [0.32, 0.46] },
+    { name: '手臂', xPct: [0.04, 0.18], yPct: [0.18, 0.52] },
+    { name: '手臂', xPct: [0.26, 0.44], yPct: [0.18, 0.52] },
+    { name: '大腿前側', xPct: [0.13, 0.44], yPct: [0.52, 0.72] },
+    { name: '膝蓋', xPct: [0.13, 0.44], yPct: [0.68, 0.76] },
+    { name: '小腿前側', xPct: [0.13, 0.44], yPct: [0.75, 0.9] },
+    { name: '腳踝/腳背', xPct: [0.13, 0.44], yPct: [0.88, 1.0] },
+  ],
+  back: [
+    { name: '頭/頸部', xPct: [0.46, 0.62], yPct: [0, 0.12] },
+    { name: '肩膀/肩胛', xPct: [0.46, 0.7], yPct: [0.12, 0.26] },
+    { name: '上背部', xPct: [0.46, 0.7], yPct: [0.22, 0.36] },
+    { name: '下背部/腰', xPct: [0.46, 0.7], yPct: [0.36, 0.5] },
+    { name: '臀部', xPct: [0.46, 0.7], yPct: [0.48, 0.58] },
+    { name: '大腿後側', xPct: [0.46, 0.7], yPct: [0.56, 0.72] },
+    { name: '膝蓋後側', xPct: [0.46, 0.7], yPct: [0.68, 0.76] },
+    { name: '小腿後側', xPct: [0.46, 0.7], yPct: [0.75, 0.9] },
+    { name: '跟腱/腳跟', xPct: [0.46, 0.7], yPct: [0.88, 1.0] },
+  ],
+  side: [
+    { name: '頭/頸部（側）', xPct: [0.7, 1.0], yPct: [0, 0.14] },
+    { name: '肩膀（側）', xPct: [0.7, 0.95], yPct: [0.14, 0.25] },
+    { name: '上臂/手肘', xPct: [0.78, 1.0], yPct: [0.22, 0.42] },
+    { name: '側腰/肋骨', xPct: [0.7, 0.9], yPct: [0.26, 0.46] },
+    { name: '臀部（側）', xPct: [0.7, 0.92], yPct: [0.46, 0.58] },
+    { name: '大腿外側/髂脛束', xPct: [0.7, 0.92], yPct: [0.56, 0.72] },
+    { name: '膝蓋（側）', xPct: [0.7, 0.92], yPct: [0.68, 0.76] },
+    { name: '小腿（側）', xPct: [0.7, 0.92], yPct: [0.75, 0.9] },
+    { name: '腳踝（側）', xPct: [0.7, 0.92], yPct: [0.88, 1.0] },
+  ]
+};
+
+// ── 初始化 ──
+window.onload = function() {
+  loadUsers();
+  renderUserList();
+  renderHistoryList();
+  updateMarksDisplay();
+};
+
+// ── 視角切換 ──
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+  document.getElementById('side-selector').classList.toggle('hidden', view !== 'side');
+  renderMarkDots();
+}
+
+function selectSide(side) {
+  currentSide = side;
+  document.querySelectorAll('.side-btn').forEach(b => b.classList.toggle('active', b.dataset.side === side));
+}
+
+// ── 點選身體圖 ──
+function onBodyClick(e) {
+  const svg = document.getElementById('body-svg');
+  const rect = svg.getBoundingClientRect();
+  const xPct = (e.clientX - rect.left) / rect.width;
+  const yPct = (e.clientY - rect.top) / rect.height;
+
+  const part = detectBodyPart(xPct, yPct, currentView);
+  const side = currentView === 'side' ? currentSide : (xPct < 0.5 ? '右側' : '左側');
+
+  const mark = {
+    id: Date.now(),
+    view: currentView,
+    xPct, yPct,
+    body_part: part,
+    side: currentView === 'side' ? (currentSide === 'left' ? '左側' : '右側') : side,
+    label: currentView === 'side'
+      ? `${part}（${currentSide === 'left' ? '左' : '右'}側）`
+      : `${part}`
+  };
+
+  marks.push(mark);
+  renderMarkDots();
+  updateMarksDisplay();
+}
+
+function detectBodyPart(xPct, yPct, view) {
+  const parts = BODY_PARTS[view] || [];
+  for (const p of parts) {
+    if (xPct >= p.xPct[0] && xPct <= p.xPct[1] &&
+        yPct >= p.yPct[0] && yPct <= p.yPct[1]) {
+      return p.name;
+    }
+  }
+  return '身體部位';
+}
+
+function renderMarkDots() {
+  const svg = document.getElementById('body-svg');
+  const img = document.getElementById('body-img');
+  const vbW = img.naturalWidth || 1200;
+  const vbH = img.naturalHeight || 800;
+  svg.setAttribute('viewBox', `0 0 ${vbW} ${vbH}`);
+  svg.innerHTML = '';
+
+  marks.filter(m => m.view === currentView).forEach(m => {
+    const cx = m.xPct * vbW;
+    const cy = m.yPct * vbH;
+    const r = vbW * 0.018;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.style.cursor = 'pointer';
+
+    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    glow.setAttribute('cx', cx); glow.setAttribute('cy', cy);
+    glow.setAttribute('r', r * 1.9);
+    glow.setAttribute('fill', 'rgba(231,76,60,0.18)');
+
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', cx); dot.setAttribute('cy', cy);
+    dot.setAttribute('r', r);
+    dot.setAttribute('fill', '#E74C3C');
+    dot.setAttribute('stroke', '#fff');
+    dot.setAttribute('stroke-width', '2');
+
+    g.appendChild(glow);
+    g.appendChild(dot);
+    g.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      removeMark(m.id);
+    });
+    svg.appendChild(g);
+  });
+}
+
+function removeMark(id) {
+  marks = marks.filter(m => m.id !== id);
+  renderMarkDots();
+  updateMarksDisplay();
+}
+
+function clearAllMarks() {
+  marks = [];
+  renderMarkDots();
+  updateMarksDisplay();
+}
+
+function updateMarksDisplay() {
+  const el = document.getElementById('marks-list');
+  if (marks.length === 0) {
+    el.innerHTML = '<span style="font-size:0.7rem;color:var(--text3)">尚未標記任何部位</span>';
+    return;
+  }
+  el.innerHTML = marks.map(m =>
+    `<div class="mark-tag" onclick="removeMark(${m.id})">📍 ${m.label} ✕</div>`
+  ).join('');
+}
+
+// ── 症狀標籤 ──
+function toggleTag(el) {
+  const group = el.dataset.group;
+  const isSingle = el.hasAttribute('data-single');
+  if (isSingle) {
+    document.querySelectorAll(`.tag[data-group="${group}"]`).forEach(t => t.classList.remove('selected'));
+  }
+  el.classList.toggle('selected');
+}
+
+function getTagValues(group) {
+  return [...document.querySelectorAll(`.tag[data-group="${group}"].selected`)].map(t => t.textContent.trim());
+}
+
+// ── 步驟導航 ──
+function goToStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById(`section-${i}`).classList.toggle('hidden', i !== n);
+    const stepEl = document.getElementById(`step-${i}`);
+    stepEl.classList.remove('active', 'done');
+    if (i < n) stepEl.classList.add('done');
+    if (i === n) stepEl.classList.add('active');
+  });
+  document.getElementById('section-loading').classList.add('hidden');
+  if (n === 4) renderHistoryList();
+  window.scrollTo(0, 0);
+}
+
+// ── AI 分析 ──
+async function startAnalysis() {
+  if (marks.length === 0) { showToast('請先點選疼痛部位'); return; }
+
+  const symptoms = {
+    timing: getTagValues('timing'),
+    pain_type: getTagValues('pain_type'),
+    situation: getTagValues('situation'),
+    frequency: getTagValues('frequency')[0] || '未填',
+    duration: getTagValues('duration')[0] || '未填',
+    level: document.getElementById('pain-level').value
+  };
+  const description = document.getElementById('description').value.trim();
+
+  // 顯示 loading
+  [1,2,3,4].forEach(i => document.getElementById(`section-${i}`).classList.add('hidden'));
+  document.getElementById('section-loading').classList.remove('hidden');
+  window.scrollTo(0, 0);
+
+  try {
+    const r = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        marks: marks.map(m => ({ view: m.view, body_part: m.label, side: m.side })),
+        symptoms, description,
+        user: currentUser || '使用者'
+      })
+    });
+    const d = await r.json();
+    document.getElementById('section-loading').classList.add('hidden');
+
+    if (!d.success) { showToast('❌ ' + d.error); goToStep(2); return; }
+
+    currentResult = d.result;
+    pendingSave = true;
+    showResult(d.result);
+    goToStep(3);
+
+  } catch(e) {
+    document.getElementById('section-loading').classList.add('hidden');
+    showToast('❌ 連線失敗，請稍後再試');
+    goToStep(2);
+  }
+}
+
+function showResult(text) {
+  const html = text
+    .replace(/## (.*)/g, '<h2>$1</h2>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.*)/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  document.getElementById('result-content').innerHTML = `<div class="result-content">${html}</div>`;
+  document.getElementById('save-btn').disabled = false;
+}
+
+// ── 儲存記錄 ──
+function saveRecord() {
+  if (!currentResult || !pendingSave) return;
+  const record = {
+    id: Date.now(),
+    date: new Date().toLocaleString('zh-TW'),
+    user: currentUser || '使用者',
+    marks: marks.map(m => m.label),
+    result: currentResult,
+    symptoms: {
+      timing: getTagValues('timing'),
+      pain_type: getTagValues('pain_type'),
+      level: document.getElementById('pain-level').value
+    }
+  };
+  const key = `pain_records_${currentUser || 'default'}`;
+  const existing = JSON.parse(localStorage.getItem(key) || '[]');
+  existing.unshift(record);
+  localStorage.setItem(key, JSON.stringify(existing.slice(0, 50)));
+  pendingSave = false;
+  document.getElementById('save-btn').disabled = true;
+  document.getElementById('save-btn').textContent = '✅ 已儲存';
+  showToast('✅ 記錄已儲存');
+}
+
+// ── 歷史記錄 ──
+function renderHistoryList() {
+  const key = `pain_records_${currentUser || 'default'}`;
+  const records = JSON.parse(localStorage.getItem(key) || '[]');
+  const el = document.getElementById('history-list');
+  document.getElementById('history-user-label').textContent = currentUser ? `（${currentUser}）` : '';
+
+  if (records.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:0.8rem">尚無記錄</div>';
+    return;
+  }
+  el.innerHTML = records.map(r => `
+    <div class="history-item">
+      <div class="history-date">${r.date} · ${r.user}</div>
+      <div class="history-marks">📍 ${r.marks.join('、')}</div>
+      <div class="history-preview">${r.symptoms?.pain_type?.join('、') || ''} · 痛覺 ${r.symptoms?.level || '-'}/10</div>
+      <details style="margin-top:6px">
+        <summary style="font-size:0.72rem;color:var(--blue);cursor:pointer">查看完整分析</summary>
+        <div style="font-size:0.72rem;margin-top:8px;color:var(--text);line-height:1.7;white-space:pre-wrap">${r.result.replace(/##\s/g,'').replace(/\*\*/g,'')}</div>
+      </details>
+      <button onclick="deleteRecord(${r.id})" style="margin-top:8px;background:none;border:none;color:var(--red);font-size:0.68rem;cursor:pointer;text-decoration:underline">刪除</button>
+    </div>
+  `).join('');
+}
+
+function deleteRecord(id) {
+  if (!confirm('確定刪除這筆記錄？')) return;
+  const key = `pain_records_${currentUser || 'default'}`;
+  const records = JSON.parse(localStorage.getItem(key) || '[]').filter(r => r.id !== id);
+  localStorage.setItem(key, JSON.stringify(records));
+  renderHistoryList();
+}
+
+// ── 使用者管理 ──
+function loadUsers() {
+  const users = JSON.parse(localStorage.getItem('pain_users') || '["預設"]');
+  if (!currentUser) currentUser = users[0];
+  document.getElementById('current-user-name').textContent = currentUser;
+  return users;
+}
+
+function saveUsers(users) {
+  localStorage.setItem('pain_users', JSON.stringify(users));
+}
+
+function renderUserList() {
+  const users = loadUsers();
+  document.getElementById('user-list').innerHTML = users.map(u => `
+    <div class="user-item ${u === currentUser ? 'active' : ''}" onclick="selectUser('${u}')">
+      <div class="user-avatar">${u[0]}</div>
+      <div class="user-name">${u}</div>
+      ${u !== '預設' ? `<button onclick="event.stopPropagation();deleteUser('${u}')" style="margin-left:auto;background:none;border:none;color:var(--red);font-size:0.75rem;cursor:pointer">刪除</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function selectUser(name) {
+  currentUser = name;
+  document.getElementById('current-user-name').textContent = name;
+  renderUserList();
+  closeUserModal();
+  renderHistoryList();
+}
+
+function addUser() {
+  const name = document.getElementById('new-user-input').value.trim();
+  if (!name) return;
+  const users = loadUsers();
+  if (users.includes(name)) { showToast('使用者已存在'); return; }
+  users.push(name);
+  saveUsers(users);
+  document.getElementById('new-user-input').value = '';
+  selectUser(name);
+  renderUserList();
+}
+
+function deleteUser(name) {
+  if (!confirm(`確定刪除使用者「${name}」？記錄也會一併刪除。`)) return;
+  const users = loadUsers().filter(u => u !== name);
+  saveUsers(users);
+  localStorage.removeItem(`pain_records_${name}`);
+  if (currentUser === name) selectUser(users[0] || '預設');
+  renderUserList();
+}
+
+function openUserModal() { document.getElementById('user-modal').classList.remove('hidden'); renderUserList(); }
+function closeUserModal(e) {
+  if (!e || e.target === document.getElementById('user-modal')) {
+    document.getElementById('user-modal').classList.add('hidden');
+  }
+}
+
+// ── 重置 ──
+function resetAll() {
+  marks = [];
+  currentResult = null;
+  pendingSave = false;
+  document.querySelectorAll('.tag.selected').forEach(t => t.classList.remove('selected'));
+  document.getElementById('pain-level').value = 5;
+  document.getElementById('level-val').textContent = '5';
+  document.getElementById('description').value = '';
+  document.getElementById('save-btn').textContent = '💾 儲存這次記錄';
+  document.getElementById('save-btn').disabled = false;
+  renderMarkDots();
+  updateMarksDisplay();
+  goToStep(1);
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
